@@ -1,21 +1,62 @@
 def get_css():
     return """
     <style>
+    /* Target the main Streamlit app container for background image */
+    .stApp {
+        background-image: url('https://images.alphacoders.com/116/1163408.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh;
+    }
+
+    /* Main content with semi-transparent background for readability */
     .main-content {
         padding: 20px;
-        background-color: #f5f5f5;
+        background-color: rgba(245, 245, 245, 0.85); /* Slightly transparent #f5f5f5 */
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         color: #2b2b2b;
         margin-bottom: 20px;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
+
+    /* Sidebar styling */
     .css-1lcbmhc { 
-        background-color: #e0e0e0;
+        background-color: rgba(224, 224, 224, 0.9);
         padding: 20px;
         border-radius: 10px;
         transition: all 0.3s ease;
         width: 250px;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
+
+    /* Sidebar content */
+    .sidebar-content {
+        display: none;
+    }
+    .sidebar-content.active {
+        display: block;
+    }
+
+    /* Button styling */
     .stButton > button {
         width: 100%;
         margin-bottom: 10px;
@@ -29,12 +70,23 @@ def get_css():
         font-size: 16px;
         font-weight: 500;
         text-align: center;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
     .stButton > button:hover {
         background-color: #909090;
         transform: scale(1.03);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
+
+    /* Download button styling (if used in imported sections) */
     .stDownloadButton > button {
         background-color: #b0b0b0;
         color: #2b2b2b;
@@ -45,18 +97,40 @@ def get_css():
         font-weight: 500;
         padding: 12px;
         width: 100%;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
     .stDownloadButton > button:hover {
         background-color: #909090;
         transform: scale(1.03);
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
+
+    /* Header styling */
     h1 {
         text-align: center;
         color: #2b2b2b;
         font-size: 24px;
         font-weight: 600;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
+
+    /* Burger button */
     .burger-button {
         font-size: 24px;
         cursor: pointer;
@@ -66,21 +140,37 @@ def get_css():
         border: none;
         padding: 5px;
         transition: all 0.2s ease;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
     .burger-button:hover {
         color: #606060;
     }
-    .sidebar-content {
-        display: none;
-    }
-    .sidebar-content.active {
-        display: block;
-    }
+
+    /* DataFrame styling */
     .stDataFrame {
         border: 1px solid #d0d0d0;
         border-radius: 5px;
         background-color: #ffffff;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
+
+    /* Dashboard iframe */
     .dashboard-iframe {
         border: none;
         border-radius: 10px;
@@ -88,14 +178,27 @@ def get_css():
         width: 100%;
         height: 600px;
     }
+
+    /* Footer styling */
     .footer {
         text-align: center;
         color: #666666;
         margin-top: 20px;
         font-size: 12px;
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
+
+    /* Responsive design */
     @media (max-width: 768px) {
-        .css-1lcbmhc {
+        .css-1lcbmhc { 
             width: 100%;
             padding: 10px;
         }
@@ -113,6 +216,20 @@ def get_css():
         .dashboard-iframe {
             height: 400px;
         }
+    }
+
+    /* Add white stroke to all text elements */
+    body, p, h1, h2, h3, h4, h5, h6, button, .stAlert, .stMarkdown, .stText, .stDataFrame, .stTable, 
+    .stSelectbox, .stTextInput, .stButton, .stDownloadButton {
+        text-shadow: 
+            -2px -2px 0 #ffffff,
+            2px -2px 0 #ffffff,
+            -2px 2px 0 #ffffff,
+            2px 2px 0 #ffffff,
+            -2px 0 0 #ffffff,
+            2px 0 0 #ffffff,
+            0 -2px 0 #ffffff,
+            0 2px 0 #ffffff;
     }
     </style>
     """
