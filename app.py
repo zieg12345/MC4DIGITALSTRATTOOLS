@@ -37,7 +37,7 @@ if 'login_error' not in st.session_state:
 
 # Define credentials
 USERNAME = "zmjepollo"
-PASSWORD = "Hepollo_021"
+PASSWORD = "Hepollo_021."
 
 # Login function
 def check_login():
@@ -161,5 +161,6 @@ else:
             auto_statistics_section()
 
         st.markdown('</div>', unsafe_allow_html=True)
+
 
     st.markdown('<div class="footer">Viber Blast Uploader v1.3 | Aug 07, 2025 07:55 AM PHT</div>', unsafe_allow_html=True)
