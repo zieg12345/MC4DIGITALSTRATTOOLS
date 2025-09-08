@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from openpyxl import Workbook
 from io import BytesIO
@@ -12,28 +12,49 @@ def process_excel_file(uploaded_file, stats_option):
     df = df.fillna("")  # Replace NaN with empty string
     df.columns = df.columns.str.strip()
     
-    # Define required and optional columns
-    required_columns = ["Account No.", "Name", "Financing/Card No."]
-    optional_columns = ["Email"]
+    # Define required and optional columns based on stats_option
+    if stats_option == "SBF SMS RESPONSE AUTOSTATS":
+        required_columns = ["Account No.", "Debtor Name", "Card No."]
+        optional_columns = []
+    else:
+        required_columns = ["Account No.", "Name", "Financing/Card No."]
+        optional_columns = ["Email"]
     missing_required = [col for col in required_columns if col not in df.columns]
     
     if missing_required:
         return None, f"Missing required columns in the uploaded file: {', '.join(missing_required)}"
     
     # Select required columns and include optional ones if present
-    output_columns = required_columns + [col for col in optional_columns if col in df.columns]
+    if stats_option == "SBF SMS RESPONSE AUTOSTATS":
+        output_columns = ["Account No.", "Debtor Name", "Card No."]
+    else:
+        output_columns = required_columns + [col for col in optional_columns if col in df.columns]
     summary_df = df[output_columns].copy()
     
-    # Rename columns to match output format
-    column_mapping = {
-        "Account No.": "ACCOUNT NUMBER",
-        "Name": "NAME",
-        "Financing/Card No.": "CARD NUMBER"
-    }
+    # Rename columns to match output format based on stats_option
+    if stats_option == "SBF SMS RESPONSE AUTOSTATS":
+        column_mapping = {
+            "Account No.": "ACCOUNT NUMBER",
+            "Debtor Name": "NAME",
+            "Card No.": "CARD NUMBER"
+        }
+    else:
+        column_mapping = {
+            "Account No.": "ACCOUNT NUMBER",
+            "Name": "NAME",
+            "Financing/Card No.": "CARD NUMBER"
+        }
     summary_df = summary_df.rename(columns=column_mapping)
     
-    # Add required output columns
-    summary_df["STATUS CODE"] = "EMAIL BLAST SENT - WAITING FOR REPLY"
+    # Add required output columns with updated STATUS CODE logic
+    if stats_option == "SBF NEGATIVE AUTOSTATS":
+        summary_df["STATUS CODE"] = "EMAIL - EMAIL SENDING"
+    elif stats_option == "SBF NEW ENDO AUTOSTATS":
+        summary_df["STATUS CODE"] = "EMAIL - EMAIL SENDING"
+    elif stats_option == "SBF SMS RESPONSE AUTOSTATS":
+        summary_df["STATUS CODE"] = "SMS - SMS REPLY"
+    else:  # L1-L6 NEGATIVE AUTOSTATS
+        summary_df["STATUS CODE"] = "EMAIL BLAST SENT - WAITING FOR REPLY"
     summary_df["REMARKS BY"] = "ZMJEPOLLO"
     # Apply live PHT timestamp to each row for REMARKS DATE
     summary_df["REMARKS DATE"] = summary_df.apply(
@@ -47,6 +68,13 @@ def process_excel_file(uploaded_file, stats_option):
             lambda row: f"EMAIL_SP MADRID_{datetime.now(pytz.timezone('Asia/Manila')).strftime('%Y-%m-%d %H:%M:%S')}_ZMJEPOLLO - {row['Email'] if 'Email' in row and row['Email'] else ''} NEGATIVE TEMPLATE",
             axis=1
         )
+    elif stats_option == "SBF NEW ENDO AUTOSTATS":
+        summary_df["REMARKS"] = summary_df.apply(
+            lambda row: f"EMAIL_SP MADRID_{datetime.now(pytz.timezone('Asia/Manila')).strftime('%Y-%m-%d %H:%M:%S')}_ZMJEPOLLO - {row['Email'] if 'Email' in row and row['Email'] else ''} NEW ENDO TEMPLATE",
+            axis=1
+        )
+    elif stats_option == "SBF SMS RESPONSE AUTOSTATS":
+        summary_df["REMARKS"] = "Client Respond Yesterday"
     else:  # L1-L6 NEGATIVE AUTOSTATS
         summary_df["REMARKS"] = summary_df.apply(
             lambda row: f"SPMA | 08 With SMS / email / DL without response - {row['Email'] if 'Email' in row and row['Email'] else ''} EMAIL SENT",
@@ -93,20 +121,20 @@ def auto_statistics_section():
     # Dropdown for selecting Auto Statistics option
     stats_option = st.selectbox(
         "Select Statistics Type",
-        ["SBF NEGATIVE AUTOSTATS", "L1-L6 NEGATIVE AUTOSTATS"],
+        ["SBF NEGATIVE AUTOSTATS", "SBF NEW ENDO AUTOSTATS", "SBF SMS RESPONSE AUTOSTATS", "L1-L6 NEGATIVE AUTOSTATS"],
         help="Choose the type of statistics to generate",
         key="auto_stats_select",
-        index=["SBF NEGATIVE AUTOSTATS", "L1-L6 NEGATIVE AUTOSTATS"].index(st.session_state.get("auto_stats_option", "SBF NEGATIVE AUTOSTATS"))
+        index=["SBF NEGATIVE AUTOSTATS", "SBF NEW ENDO AUTOSTATS", "SBF SMS RESPONSE AUTOSTATS", "L1-L6 NEGATIVE AUTOSTATS"].index(st.session_state.get("auto_stats_option", "SBF NEGATIVE AUTOSTATS"))
     )
     st.session_state.auto_stats_option = stats_option
 
-    if stats_option in ["SBF NEGATIVE AUTOSTATS", "L1-L6 NEGATIVE AUTOSTATS"]:
+    if stats_option in ["SBF NEGATIVE AUTOSTATS", "SBF NEW ENDO AUTOSTATS", "SBF SMS RESPONSE AUTOSTATS", "L1-L6 NEGATIVE AUTOSTATS"]:
         st.write(f"### {stats_option}")
         uploaded_file = st.file_uploader(
             "📤 Choose an Excel file",
             type=["xlsx"],
             key=f"{stats_option.lower().replace(' ', '_')}_uploader",
-            help="Upload an Excel (.xlsx) file with columns: Account No., Name, Financing/Card No., Email (optional)"
+            help="Upload an Excel (.xlsx) file with columns: Account No., Name, Financing/Card No., Email (optional) or Account No., Debtor Name, Card No. for SBF SMS RESPONSE AUTOSTATS"
         )
         if uploaded_file is not None:
             st.session_state.uploaded_file = uploaded_file
@@ -160,4 +188,4 @@ def auto_statistics_section():
             except Exception as e:
                 st.error(f"An error occurred while processing the file: {str(e)}")
         else:
-            st.info("Please upload an Excel file with columns 'Account No.', 'Name', 'Financing/Card No.', and optionally 'Email' to generate the summary table.")
+            st.info("Please upload an Excel file with columns 'Account No.', 'Name', 'Financing/Card No., and optionally 'Email' to generate the summary table, or 'Account No.', 'Debtor Name', 'Card No.' for SBF SMS RESPONSE AUTOSTATS.")
