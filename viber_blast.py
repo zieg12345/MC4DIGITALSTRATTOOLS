@@ -25,18 +25,16 @@ def viber_blast_section():
         st.session_state.uploaded_file = uploaded_file
         st.success("Raw data file uploaded successfully!")
 
-    # File uploader for collector lookup (only for Bucket 2)
-    uploaded_lookup_file = None
-    if bucket_option == "Bucket 2":
-        uploaded_lookup_file = st.file_uploader(
-            "📤 Choose Collector Lookup Excel file",
-            type=["xlsx"],
-            key=f"viber_blast_uploader_lookup_{bucket_option.lower().replace(' ', '_')}",
-            help="Upload an Excel Workbook (.xlsx) with columns: Account No., Collector"
-        )
-        if uploaded_lookup_file is not None:
-            st.session_state.uploaded_lookup_file = uploaded_lookup_file
-            st.success("Collector lookup file uploaded successfully!")
+    # File uploader for collector lookup (for both Bucket 2 and Bucket 4)
+    uploaded_lookup_file = st.file_uploader(
+        "📤 Choose Collector Lookup Excel file",
+        type=["xlsx"],
+        key=f"viber_blast_uploader_lookup_{bucket_option.lower().replace(' ', '_')}",
+        help="Upload an Excel Workbook (.xlsx) with columns: Account No., Collector"
+    )
+    if uploaded_lookup_file is not None:
+        st.session_state.uploaded_lookup_file = uploaded_lookup_file
+        st.success("Collector lookup file uploaded successfully!")
 
     # Reset button
     if st.session_state.get('uploaded_file') is not None or st.session_state.get('uploaded_lookup_file') is not None:
@@ -46,27 +44,16 @@ def viber_blast_section():
             st.session_state.button1_clicked = False
             st.rerun()
 
-    # Sample data based on bucket
-    if bucket_option == "Bucket 2":
-        sample_data = {
-            "Campaign": ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"],
-            "CH Code": ["12345", "123456", "1234567", "12345678"],
-            "First Name": ["", "", "", ""],
-            "Full Name": ["Richard Arenas", "Jinnggoy Dela Cruz", "Roman Dalisay", "Edwin Paras"],
-            "Last Name": ["Collector A", "Collector B", "PJHA", "Collector D"],
-            "Mobile Number": ["09274186327", "09760368821", "09088925110", "09175791122"],
-            "OB": ["", "", "", ""]
-        }
-    else:  # Bucket 4
-        sample_data = {
-            "Campaign": ["SAMPLE"],
-            "CH Code": ["123456789"],
-            "First Name": [""],
-            "Full Name": ["Janica d Benbinuto"],
-            "Last Name": [""],
-            "Mobile Number": ["09655669672"],
-            "OB": [""]
-        }
+    # Sample data for both buckets
+    sample_data = {
+        "Campaign": ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"],
+        "CH Code": ["12345", "123456", "1234567", "12345678"],
+        "First Name": ["", "", "", ""],
+        "Full Name": ["Richard Arenas", "Jinnggoy Dela Cruz", "Roman Dalisay", "Edwin Paras"],
+        "Last Name": ["Collector A", "Collector B", "PJHA", "Collector D"],
+        "Mobile Number": ["09274186327", "09760368821", "09088925110", "09175791122"],
+        "OB": ["", "", "", ""]
+    }
     sample_df = pd.DataFrame(sample_data)
 
     # Dynamic filename
@@ -116,8 +103,8 @@ def viber_blast_section():
                         "OB": [""] * len(df)
                     })
 
-                    # For Bucket 2, perform collector lookup
-                    if bucket_option == "Bucket 2" and st.session_state.get('uploaded_lookup_file') is not None:
+                    # Perform collector lookup for both buckets
+                    if st.session_state.get('uploaded_lookup_file') is not None:
                         try:
                             # Read lookup Excel file
                             lookup_df = pd.read_excel(st.session_state.uploaded_lookup_file, dtype=str)
