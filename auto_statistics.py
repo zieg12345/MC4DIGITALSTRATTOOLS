@@ -162,4 +162,5 @@ def auto_statistics_section(stats_option="SBF NEGATIVE AUTOSTATS"):
         st.info("Please upload an Excel file with columns 'Account No.', 'Name', 'Financing/Card No.', and optionally 'Email' to generate the summary table.")
 
 def auto_statistics_sbf_new_endo_section():
+
     auto_statistics_section(stats_option="SBF NEW ENDO")
