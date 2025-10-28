@@ -32,8 +32,12 @@ def process_excel_file(uploaded_file, stats_option):
     }
     summary_df = summary_df.rename(columns=column_mapping)
     
-    # Add required output columns
-    summary_df["STATUS CODE"] = "EMAIL BLAST SENT - WAITING FOR REPLY"
+    # === STATUS CODE: CUSTOM FOR SBF NEW ENDO & SBF NEGATIVE AUTOSTATS ===
+    if stats_option in ["SBF NEW ENDO", "SBF NEGATIVE AUTOSTATS"]:
+        summary_df["STATUS CODE"] = "EMAIL - EMAIL SENDING"
+    else:
+        summary_df["STATUS CODE"] = "EMAIL BLAST SENT - WAITING FOR REPLY"
+    
     summary_df["REMARKS BY"] = "ZMJEPOLLO"
     # Apply live PHT timestamp to each row for REMARKS DATE
     summary_df["REMARKS DATE"] = summary_df.apply(
@@ -100,7 +104,7 @@ def auto_statistics_section(stats_option="SBF NEGATIVE AUTOSTATS"):
     
     st.write(f"### {stats_option}")
     uploaded_file = st.file_uploader(
-        "📤 Choose an Excel file",
+        "Choose an Excel file",
         type=["xlsx"],
         key=f"{stats_option.lower().replace(' ', '_')}_uploader",
         help="Upload an Excel (.xlsx) file with columns: Account No., Name, Financing/Card No., Email (optional)"
@@ -111,7 +115,7 @@ def auto_statistics_section(stats_option="SBF NEGATIVE AUTOSTATS"):
     
     # Reset button
     if st.session_state.get(f"uploaded_file_{stats_option.lower().replace(' ', '_')}") is not None:
-        if st.button("🔄 Reset", key=f"reset_{stats_option.lower().replace(' ', '_')}", help="Clear the uploaded file and reset"):
+        if st.button("Reset", key=f"reset_{stats_option.lower().replace(' ', '_')}", help="Clear the uploaded file and reset"):
             st.session_state[f"uploaded_file_{stats_option.lower().replace(' ', '_')}"] = None
             st.cache_data.clear()  # Clear cache on reset
             st.rerun()
@@ -149,7 +153,7 @@ def auto_statistics_section(stats_option="SBF NEGATIVE AUTOSTATS"):
                 today = datetime.now(pytz.timezone('Asia/Manila')).strftime("%B %d %Y")
                 file_name = f"{stats_option.replace(' ', '_')} {today}.xlsx"
                 st.download_button(
-                    label="📥 Download Processed Excel",
+                    label="Download Processed Excel",
                     data=output,
                     file_name=file_name,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -162,5 +166,4 @@ def auto_statistics_section(stats_option="SBF NEGATIVE AUTOSTATS"):
         st.info("Please upload an Excel file with columns 'Account No.', 'Name', 'Financing/Card No.', and optionally 'Email' to generate the summary table.")
 
 def auto_statistics_sbf_new_endo_section():
-
     auto_statistics_section(stats_option="SBF NEW ENDO")
