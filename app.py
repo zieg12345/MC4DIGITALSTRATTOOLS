@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 from datetime import datetime
 import pytz
@@ -14,6 +15,7 @@ import auto_statistics
 import live_inbound_monitoring
 import random
 import email_blast_sbf_new_endo
+import sms_blasting  # <-- NEW IMPORT
 
 # Hardcoded credentials
 USERNAME = "zmjepollo"
@@ -81,6 +83,7 @@ else:
             "Select an option:",
             [
                 "VIBER BLAST",
+                "SMS BLASTING",        # <-- NEW OPTION
                 "EMAIL BLAST",
                 "LIVE INBOUND MONITORING",
                 "AUTO STATISTICS"
@@ -91,6 +94,8 @@ else:
     # Conditional rendering based on selected option
     if option == "VIBER BLAST":
         viber_blast.viber_blast_section()
+    elif option == "SMS BLASTING":  # <-- NEW SECTION
+        sms_blasting.sms_blasting_section()
     elif option == "EMAIL BLAST":
         email_option = st.selectbox(
             "Select Email Blast Type:",
@@ -145,7 +150,7 @@ else:
     st.markdown(
         f"""
         <div class='footer'>
-            <p>WORKLOADS-AUTOMATED v1.0 | Last updated: {datetime.now(pytz.timezone('Asia/Manila')).strftime('%B %d, %Y %I:%M %p PST')}</p>
+            <p>WORKLOADS-AUTOMATED v1.0 | Last updated: {datetime.now(pytz.timezone('Asia/Manila')).strftime('%B %d, %Y %I:%M %p PHT')}</p>
         </div>
         """,
         unsafe_allow_html=True
