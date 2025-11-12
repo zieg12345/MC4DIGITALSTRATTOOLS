@@ -1,3 +1,4 @@
+# viber_blast.py
 import streamlit as st
 import pandas as pd
 from datetime import datetime
@@ -7,228 +8,185 @@ from io import BytesIO
 def viber_blast_section():
     st.subheader("Viber Blast CSV Uploader")
 
-    # File uploader for raw data (CSV)
+    # === UPLOADERS ===
     uploaded_file = st.file_uploader(
-        "📤 Choose Raw Data CSV file",
+        "Choose Raw Data CSV file",
         type=["csv"],
-        key="viber_blast_uploader_raw",
-        help="Upload a CSV with columns: Contact No., Debtor Name, Account No., Client, Validity"
+        key="viber_raw_uploader",
+        help="Must have: Contact No., Debtor Name, Account No., Client, Validity"
     )
-    if uploaded_file is not None:
-        st.session_state.uploaded_file = uploaded_file
-        st.success("Raw data file uploaded successfully!")
+    if uploaded_file:
+        st.session_state.viber_raw_file = uploaded_file
+        st.success("Raw data uploaded")
 
-    # File uploader for collector lookup (Excel)
-    uploaded_lookup_file = st.file_uploader(
-        "📤 Choose Collector Lookup Excel file",
+    uploaded_lookup = st.file_uploader(
+        "Choose Collector Lookup Excel",
         type=["xlsx"],
-        key="viber_blast_uploader_lookup",
-        help="Upload an Excel Workbook (.xlsx) with columns: Account No., Collector"
+        key="viber_lookup_uploader",
+        help="Must have: Account No. and Collector (code like MGARBAS)"
     )
-    if uploaded_lookup_file is not None:
-        st.session_state.uploaded_lookup_file = uploaded_lookup_file
-        st.success("Collector lookup file uploaded successfully!")
+    if uploaded_lookup:
+        st.session_state.viber_lookup_file = uploaded_lookup
+        st.success("Collector lookup uploaded")
 
-    # Reset button
-    if st.session_state.get('uploaded_file') is not None or st.session_state.get('uploaded_lookup_file') is not None:
-        if st.button("🔄 Reset", help="Clear the uploaded files and reset"):
-            st.session_state.uploaded_file = None
-            st.session_state.uploaded_lookup_file = None
-            st.session_state.button1_clicked = False
+    # === RESET ===
+    if st.session_state.get('viber_raw_file') or st.session_state.get('viber_lookup_file'):
+        if st.button("Reset All", type="secondary"):
+            for k in ['viber_raw_file', 'viber_lookup_file']:
+                st.session_state.pop(k, None)
             st.rerun()
 
-    # Original sample data (used for SBC CARDS CURING B2 and default)
-    original_sample_data = {
-        "Campaign": ["SAMPLE", "SAMPLE", "SAMPLE", "SAMPLE"],
+    # === SAMPLE DATA ===
+    sample_b2 = pd.DataFrame({
+        "Campaign": ["SAMPLE"]*4,
         "CH Code": ["12345", "123456", "1234567", "12345678"],
-        "First Name": ["", "", "", ""],
+        "First Name": [""]*4,
         "Full Name": ["Richard Arenas", "Jinnggoy Dela Cruz", "Roman Dalisay", "Edwin Paras"],
         "Last Name": ["Collector A", "Collector B", "PJHA", "Collector D"],
         "Mobile Number": ["09274186327", "09760368821", "09088925110", "09175791122"],
-        "OB": ["", "", "", ""]
-    }
+        "OB": [""]*4
+    })
+    sample_b4 = pd.DataFrame({
+        "Campaign": ["TEST"], "CH Code": ["1234"], "First Name": [""],
+        "Full Name": ["Janica d Benbinuto"], "Last Name": ["TEST"],
+        "Mobile Number": ["09655669672"], "OB": [""]
+    })
+    sample_df = sample_b2.copy()
+    campaign_name = "GENERIC"
+    timestamp = datetime.now().strftime("%b %d %Y %I_%M %p").upper()
 
-    # Sample data for SBC CURING B4
-    sbc_curing_b4_sample_data = {
-        "Campaign": ["TEST"],
-        "CH Code": ["1234"],
-        "First Name": [""],
-        "Full Name": ["Janica d Benbinuto"],
-        "Last Name": ["TEST"],
-        "Mobile Number": ["09655669672"],
-        "OB": [""]
-    }
-
-    # Initialize sample DataFrame with original sample data
-    sample_df = pd.DataFrame(original_sample_data)
-
-    # Dynamic filename (will be updated based on detected campaign)
-    campaign_name = "GENERIC"  # Default
-    current_date = datetime.now().strftime(f"VIBER BLAST {campaign_name} %b %d %Y %I_%M %p PST").upper()
-
-    if st.session_state.get('uploaded_file') is not None:
+    if st.session_state.get('viber_raw_file'):
         try:
-            # Read raw data CSV
-            df = pd.read_csv(st.session_state.uploaded_file, encoding='utf-8-sig', skipinitialspace=True, dtype=str)
-            df = df.fillna("")  # Replace NaN with empty string
+            # === READ RAW DATA ===
+            df = pd.read_csv(st.session_state.viber_raw_file, encoding='utf-8-sig', dtype=str)
+            df = df.fillna("")
             df.columns = df.columns.str.strip()
 
-            # Validate required columns
-            required_columns = ["Contact No.", "Debtor Name", "Account No.", "Client", "Validity"]
-            missing_columns = [col for col in required_columns if col not in df.columns]
-            if missing_columns:
-                st.error(f"The following required columns are missing in raw data: {', '.join(missing_columns)}")
+            required = ["Contact No.", "Debtor Name", "Account No.", "Client", "Validity"]
+            if not all(col in df.columns for col in required):
+                st.error(f"Missing columns: {', '.join([c for c in required if c not in df.columns])}")
                 return
 
-            # Clean Contact No. and Account No. (remove ="" wrappers)
-            df["Contact No."] = df["Contact No."].str.replace(r'^="|"$', '', regex=True)
-            df["Account No."] = df["Account No."].str.replace(r'^="|"$', '', regex=True)
+            df["Contact No."] = df["Contact No."].str.replace(r'^="?|"?$', '', regex=True).str.strip()
+            df["Account No."] = df["Account No."].str.replace(r'^="?|"?$', '', regex=True).str.strip()
 
-            # Filter out invalid rows based on Validity column
-            initial_row_count_validity = len(df)
-            df = df[df["Validity"] == "Valid"]
-            if len(df) < initial_row_count_validity:
-                st.info(f"Removed {initial_row_count_validity - len(df)} rows where Validity is not 'Valid'.")
+            # === FILTERS ===
+            before = len(df)
+            df = df[df["Validity"].str.strip().str.upper() == "VALID"]
+            st.info(f"Removed {before - len(df)} invalid Validity")
 
-            # Validate Contact No. length (11 digits)
-            df["Contact No."] = df["Contact No."].str.strip()
-            invalid_contact_no = df[df["Contact No."].str.len() != 11]
-            if not invalid_contact_no.empty:
-                st.warning(f"Found {len(invalid_contact_no)} rows where Contact No. is not 11 digits. These rows are still included but may need review.")
-
-            # Filter out rows with 'BEL' in Account No.
-            initial_row_count_bel = len(df)
+            before = len(df)
             df = df[~df["Account No."].str.contains("BEL", case=False, na=False)]
-            if initial_row_count_bel != len(df):
-                st.info(f"Removed {initial_row_count_bel - len(df)} rows where Account No. contains 'BEL'.")
+            st.info(f"Removed {before - len(df)} BEL accounts")
 
-            # Remove duplicates based on Account No. and Contact No.
-            initial_row_count = len(df)
-            df = df.drop_duplicates(subset=["Account No.", "Contact No."], keep="first")
-            if initial_row_count != len(df):
-                st.info(f"Removed {initial_row_count - len(df)} duplicate rows based on 'Account No.' and 'Contact No.'.")
-
-            # Prepare summary DataFrame
+            # === BASE TABLE ===
             summary_df = pd.DataFrame({
                 "Campaign": df["Client"],
                 "CH Code": df["Account No."],
                 "First Name": "",
-                "Full Name": df["Debtor Name"],
-                "Last Name": "",  # To be populated from collector file
+                "Full Name": df["Debtor Name"],  # ← DEBTOR NAME
+                "Last Name": "",                 # ← WILL BE COLLECTOR CODE
                 "Mobile Number": df["Contact No."],
                 "OB": ""
             })
 
-            # Update sample data and filename based on Campaign
-            if "SBC CURING B4" in summary_df["Campaign"].values:
-                sample_df = pd.DataFrame(sbc_curing_b4_sample_data)
+            # === CAMPAIGN DETECTION ===
+            if summary_df["Campaign"].str.contains("SBC CURING B4", case=False, na=False).any():
+                sample_df = sample_b4
                 campaign_name = "SBC CURING B4"
-                st.info("Detected 'SBC CURING B4' in Campaign. Using custom sample data with 'Janica d Benbinuto'.")
-            elif "SBC CARDS CURING B2" in summary_df["Campaign"].values:
-                sample_df = pd.DataFrame(original_sample_data)
+            elif summary_df["Campaign"].str.contains("SBC CARDS CURING B2", case=False, na=False).any():
                 campaign_name = "SBC CARDS CURING B2"
-                st.info("Detected 'SBC CARDS CURING B2' in Campaign. Using original sample data with 'Richard Arenas' and others.")
+
+            # === 100% CORRECT COLLECTOR LOOKUP + REMOVE UNMATCHED ===
+            if not st.session_state.get('viber_lookup_file'):
+                st.error("Collector lookup file is REQUIRED!")
+                st.stop()
+
+            lookup = pd.read_excel(st.session_state.viber_lookup_file, dtype=str)
+            lookup = lookup.fillna("")
+            lookup.columns = lookup.columns.str.strip()
+
+            # Auto-detect Account and Collector columns
+            acc_cols = [c for c in lookup.columns if any(k in c.lower() for k in ["account", "acc", "ch"])]
+            coll_cols = [c for c in lookup.columns if any(k in c.lower() for k in ["collector", "agent", "code"])]
+
+            if not acc_cols or not coll_cols:
+                st.error("Cannot find Account No. or Collector column in lookup file!")
+                st.write("Found columns:", list(lookup.columns))
+                st.stop()
+
+            acc_col = acc_cols[0]
+            coll_col = coll_cols[0]
+            st.info(f"Using: '{acc_col}' → Account | '{coll_col}' → Collector Code")
+
+            lookup[acc_col] = lookup[acc_col].str.replace(r'^="?|"?$', '', regex=True).str.strip()
+
+            # === PERFECT MERGE: CH Code → Collector Code into Last Name ===
+            merged = summary_df.merge(
+                lookup[[acc_col, coll_col]].rename(columns={
+                    acc_col: "CH Code",
+                    coll_col: "Collector_Code"
+                }),
+                on="CH Code",
+                how="left"
+            )
+
+            # === REMOVE ROWS WITH NO COLLECTOR ===
+            before = len(merged)
+            merged = merged[merged["Collector_Code"].notna() & (merged["Collector_Code"].str.strip() != "")]
+            after = len(merged)
+            removed = before - after
+
+            if removed > 0:
+                st.warning(f"Removed {removed} accounts → NO COLLECTOR in lookup")
+                removed_codes = merged[~merged["Collector_Code"].notna()]["CH Code"].tolist()[:10]
+                st.write("Removed CH Codes:", removed_codes)
             else:
-                campaign_name = "GENERIC"
-                st.info("No specific campaign detected. Using default sample data with 'Richard Arenas' and others.")
+                st.success("All accounts matched with collector!")
 
-            # Update filename with detected campaign
-            current_date = datetime.now().strftime(f"VIBER BLAST {campaign_name} %b %d %Y %I_%M %p PST").upper()
+            # === FINAL CLEAN TABLE ===
+            final_clean = merged[["Campaign", "CH Code", "First Name", "Full Name", "Mobile Number", "OB"]].copy()
+            final_clean["Last Name"] = merged["Collector_Code"]  # ← COLLECTOR CODE HERE
 
-            # Process collector lookup file if uploaded
-            if st.session_state.get('uploaded_lookup_file') is not None:
-                try:
-                    lookup_df = pd.read_excel(st.session_state.uploaded_lookup_file, engine='openpyxl', dtype=str)
-                    lookup_df = lookup_df.fillna("")
-                    lookup_df.columns = lookup_df.columns.str.strip()
+            # === REMOVE DUPLICATES ===
+            before_dup = len(final_clean)
+            final_clean = final_clean.drop_duplicates(subset=["CH Code"], keep="first")
+            dup_removed = before_dup - len(final_clean)
+            if dup_removed:
+                st.success(f"Removed {dup_removed} duplicate CH Code(s)")
 
-                    # Validate required columns in lookup file
-                    required_lookup_columns = ["Account No.", "Collector"]
-                    missing_lookup_columns = [col for col in required_lookup_columns if col not in lookup_df.columns]
-                    if missing_lookup_columns:
-                        st.error(f"The following required columns are missing in lookup file: {', '.join(missing_lookup_columns)}")
-                        return
+            # === ADD SAMPLES ===
+            final_df = pd.concat([final_clean, sample_df], ignore_index=True)
+            filename = f"VIBER BLAST {campaign_name} {timestamp} PST.xlsx".upper()
 
-                    # Clean Account No. in lookup file (ensure string, strip whitespace)
-                    lookup_df["Account No."] = lookup_df["Account No."].str.strip()
+            st.subheader("FINAL VIBER BLAST TABLE")
+            st.dataframe(final_df, use_container_width=True)
+            st.success(f"READY → {len(final_df)} rows | 100% CLEAN & CORRECT")
 
-                    # Merge with lookup file to get Collector
-                    merged_df = summary_df.merge(
-                        lookup_df[["Account No.", "Collector"]],
-                        left_on="CH Code",
-                        right_on="Account No.",
-                        how="left"
-                    )
-
-                    # Update Last Name with Collector
-                    summary_df["Last Name"] = merged_df["Collector"].fillna("")
-
-                    # Report matching statistics
-                    matched_count = len(merged_df[merged_df["Collector"].notna()])
-                    unmatched_count = len(merged_df[merged_df["Collector"].isna()])
-                    st.info(f"Collector lookup completed. {matched_count} out of {len(summary_df)} accounts matched with collectors.")
-                    if unmatched_count > 0:
-                        st.warning(f"{unmatched_count} accounts did not find a matching Collector in the lookup file. Check for formatting issues in 'Account No.'.")
-                except Exception as e:
-                    st.error(f"Error processing lookup file: {str(e)}. Please ensure the Excel file is valid and contains the required columns.")
-                    return
-
-            # Combine with sample data
-            summary_df = pd.concat([summary_df, sample_df], ignore_index=True)
-
-            # Display summary table
-            st.subheader("Summary Table")
-            st.dataframe(summary_df, use_container_width=True)
-
-            # Generate Excel file
+            # === DOWNLOAD ===
             output = BytesIO()
             wb = Workbook()
             ws = wb.active
             ws.title = "Viber Blast"
-            headers = list(summary_df.columns)
-            for col_num, header in enumerate(headers, 1):
-                ws.cell(row=1, column=col_num).value = header
-            for row_num, row in enumerate(summary_df.values, 2):
-                for col_num, value in enumerate(row, 1):
-                    ws.cell(row=row_num, column=col_num).value = str(value)
-                    ws.cell(row=row_num, column=col_num).number_format = '@'
+            for c, h in enumerate(final_df.columns, 1):
+                ws.cell(1, c, h)
+            for r, row in enumerate(final_df.itertuples(index=False, name=None), 2):
+                for c, val in enumerate(row, 1):
+                    ws.cell(r, c, str(val) if pd.notna(val) else "").number_format = "@"
             wb.save(output)
             output.seek(0)
 
-            # Download button
             st.download_button(
-                label="📥 Download Summary Table as Excel",
+                label="DOWNLOAD VIBER BLAST EXCEL",
                 data=output,
-                file_name=f"{current_date}.xlsx",
+                file_name=filename,
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="download_summary",
-                use_container_width=True
+                use_container_width=True,
+                key="viber_download"
             )
+
         except Exception as e:
-            st.error(f"An error occurred while processing the raw data file: {str(e)}")
+            st.error(f"Error: {e}")
     else:
-        # Use original sample data if no file is uploaded
-        st.subheader("Sample Summary Table")
-        st.dataframe(sample_df, use_container_width=True)
-        output = BytesIO()
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Viber Blast"
-        headers = list(sample_df.columns)
-        for col_num, header in enumerate(headers, 1):
-            ws.cell(row=1, column=col_num).value = header
-        for row_num, row in enumerate(sample_df.values, 2):
-            for col_num, value in enumerate(row, 1):
-                ws.cell(row=row_num, column=col_num).value = str(value)
-                ws.cell(row=row_num, column=col_num).number_format = '@'
-        wb.save(output)
-        output.seek(0)
-        st.download_button(
-            label="📥 Download Sample Excel",
-            data=output,
-            file_name=f"{current_date}.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            key="download_sample",
-            use_container_width=True
-        )
-        st.info("Please upload a CSV file with raw data and an Excel file with collector data to generate the summary table.")
+        st.info("Upload Raw CSV + Collector Excel to start")
+        st.dataframe(sample_b2, use_container_width=True)

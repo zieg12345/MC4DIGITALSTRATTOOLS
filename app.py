@@ -8,94 +8,87 @@ import email_blast_bucket2
 import email_blast_bucket4
 import email_blast_level1
 import email_blast_level6
-import email_blast_sbf_salad
-import email_blast_sbf_pl
+import email_blast_sbf_new_endo   # ← ONLY CORRECT VERSION (Client Name included)
 import mc4_ptp
 import auto_statistics
 import live_inbound_monitoring
 import random
-import email_blast_sbf_new_endo
-import sms_blasting  # <-- NEW IMPORT
+import sms_blasting
 
-# Hardcoded credentials
-USERNAME = "zmjepollo"
-PASSWORD = "Hepollo_021"
+# === LOGIN CREDENTIALS (MOVE TO secrets.toml FOR PRODUCTION) ===
+try:
+    USERNAME = st.secrets["USERNAME"]
+    PASSWORD = st.secrets["PASSWORD"]
+except:
+    USERNAME = "zmjepollo"
+    PASSWORD = "Hepollo_021"
 
-# Set page configuration
+# === PAGE CONFIG ===
 st.set_page_config(
     page_title="WORKLOADS-AUTOMATED",
-    page_icon="Chart",
+    page_icon="Chart Increasing",
     layout="wide"
 )
 
-# Apply custom CSS
+# === CUSTOM CSS ===
 st.markdown(styles.custom_css, unsafe_allow_html=True)
 
-# Initialize session state for login
+# === LOGIN STATE ===
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# Login section
+# === LOGIN PAGE ===
 if not st.session_state.logged_in:
     st.header("Login to WORKLOADS-AUTOMATED")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
+    st.markdown("<br>", unsafe_allow_html=True)
     
-    if st.button("Login"):
-        if username == USERNAME and password == PASSWORD:
-            st.session_state.logged_in = True
-            st.success("Logged in successfully!")
-            st.rerun()
-        else:
-            st.error("Invalid username or password")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        username = st.text_input("Username", placeholder="Enter username")
+        password = st.text_input("Password", type="password", placeholder="Enter password")
+        login_btn = st.button("Login", use_container_width=True, type="primary")
+
+        if login_btn:
+            if username == USERNAME and password == PASSWORD:
+                st.session_state.logged_in = True
+                st.success("Logged in successfully!")
+                st.rerun()
+            else:
+                st.error("Invalid username or password")
+
 else:
-    # Display motivational quote
+    # === MOTIVATIONAL QUOTE ===
     st.markdown(f"<div class='quote-box'>{random.choice(styles.motivational_quotes)}</div>", unsafe_allow_html=True)
 
-    # Sidebar with burger menu
+    # === SIDEBAR MENU ===
     with st.sidebar:
         st.markdown(
             """
-            <style>
-            .sidebar .sidebar-content {
-                background-color: #f0f2f6;
-            }
-            .burger-menu {
-                font-size: 24px;
-                cursor: pointer;
-                padding: 10px;
-                background-color: #007bff;
-                color: white;
-                text-align: center;
-                border-radius: 5px;
-            }
-            .burger-menu:hover {
-                background-color: #0056b3;
-            }
-            </style>
             <div class="burger-menu">Menu</div>
             """,
             unsafe_allow_html=True
         )
 
-        # Dropdown menu for selecting options
         option = st.selectbox(
-            "Select an option:",
+            "Select Tool:",
             [
                 "VIBER BLAST",
-                "SMS BLASTING",        # <-- NEW OPTION
+                "SMS BLASTING",
                 "EMAIL BLAST",
                 "LIVE INBOUND MONITORING",
                 "AUTO STATISTICS"
             ],
-            key="main_option"
+            key="main_option",
+            label_visibility="collapsed"
         )
 
-    # Conditional rendering based on selected option
+    # === MAIN CONTENT ROUTING ===
     if option == "VIBER BLAST":
         viber_blast.viber_blast_section()
-    elif option == "SMS BLASTING":  # <-- NEW SECTION
+
+    elif option == "SMS BLASTING":
         sms_blasting.sms_blasting_section()
+
     elif option == "EMAIL BLAST":
         email_option = st.selectbox(
             "Select Email Blast Type:",
@@ -104,13 +97,12 @@ else:
                 "BUCKET 4",
                 "LEVEL 1 NEGATIVE ACCOUNT",
                 "LEVEL 6 NEGATIVE ACCOUNT",
-                "SBF SALAD NEGATIVE ACCOUNT",
-                "SBF PL NEGATIVE ACCOUNT",
-                "MC4 PTP",
-                "SBF NEW ENDO"
+                "SBF",           # ← CLEAN LABEL (was SBF NEW ENDO)
+                "MC4 PTP"
             ],
             key="email_blast_option"
         )
+
         if email_option == "BUCKET 2":
             email_blast_bucket2.email_blast_bucket2_section()
         elif email_option == "BUCKET 4":
@@ -119,16 +111,14 @@ else:
             email_blast_level1.email_blast_level1_section()
         elif email_option == "LEVEL 6 NEGATIVE ACCOUNT":
             email_blast_level6.email_blast_level6_section()
-        elif email_option == "SBF SALAD NEGATIVE ACCOUNT":
-            email_blast_sbf_salad.email_blast_sbf_salad_section()
-        elif email_option == "SBF PL NEGATIVE ACCOUNT":
-            email_blast_sbf_pl.email_blast_sbf_pl_section()
+        elif email_option == "SBF":   # ← MATCHES NEW LABEL
+            email_blast_sbf_new_endo.email_blast_sbf_new_endo_section()
         elif email_option == "MC4 PTP":
             mc4_ptp.mc4_ptp_section()
-        elif email_option == "SBF NEW ENDO":
-            email_blast_sbf_new_endo.email_blast_sbf_new_endo_section()
+
     elif option == "LIVE INBOUND MONITORING":
         live_inbound_monitoring.live_inbound_monitoring_section()
+
     elif option == "AUTO STATISTICS":
         auto_option = st.selectbox(
             "Select Auto Statistics Type:",
@@ -146,7 +136,7 @@ else:
         elif auto_option == "SBF NEW ENDO":
             auto_statistics.auto_statistics_sbf_new_endo_section()
 
-    # Footer
+    # === FOOTER ===
     st.markdown(
         f"""
         <div class='footer'>
