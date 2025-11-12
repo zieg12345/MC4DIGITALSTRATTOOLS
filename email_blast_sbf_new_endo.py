@@ -45,7 +45,7 @@ def email_blast_sbf_new_endo_section():
                 st.info(f"Removed {initial_row_count - filtered_row_count} rows with invalid or missing email addresses.")
 
             summary_df = pd.DataFrame({
-                "{{email}}": df["Email"],
+                "Email": df["Email"],
                 "{{chname}}": df["Name"],
                 "{{agentcode}}": df["Collector"],
                 "{{ID}}": "SCCO",
@@ -57,7 +57,7 @@ def email_blast_sbf_new_endo_section():
             st.dataframe(summary_df, use_container_width=True)
 
             st.info(f"Total Rows: {len(summary_df)}")
-            st.info(f"Unique Emails: {len(summary_df['{{email}}'].unique())}")
+            st.info(f"Unique Emails: {len(summary_df['Email'].unique())}")
             st.info(f"Unique Names: {len(summary_df['{{chname}}'].unique())}")
             st.info(f"Unique Accounts: {len(df['Account No.'].unique())}")
             st.info(f"Unique Financing/Card Nos.: {len(df['Financing/Card No.'].unique())}")
@@ -87,4 +87,5 @@ def email_blast_sbf_new_endo_section():
         except Exception as e:
             st.error(f"An error occurred while processing the file: {str(e)}")
     else:
+
         st.info("Please upload an Excel file to generate the summary table.")
